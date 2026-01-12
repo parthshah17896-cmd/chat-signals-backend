@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing chatText or userName" });
   }
 
-  // ---------------- BASIC CHAT PARSING ----------------
+  // ---------------- CHAT PARSING ----------------
   const lines = chatText.split("\n").filter(Boolean);
 
   let userMessages = 0;
@@ -32,7 +32,6 @@ export default async function handler(req, res) {
 
     const isUser = line.includes(`${userName}:`);
     const message = line.split(":").slice(1).join(":").trim();
-
     if (!message) return;
 
     if (isUser) {
@@ -47,7 +46,7 @@ export default async function handler(req, res) {
 
   const totalMessages = userMessages + otherMessages || 1;
 
-  // ---------------- PERCENTAGE METRICS ----------------
+  // ---------------- SCORE CALCULATIONS ----------------
   const interestFromThemPercent = Math.min(
     100,
     Math.round(
@@ -74,7 +73,7 @@ export default async function handler(req, res) {
     100,
     Math.round(
       interestFromThemPercent * 0.7 +
-        (otherQuestions / Math.max(otherMessages, 1)) * 30
+      (otherQuestions / Math.max(otherMessages, 1)) * 30
     )
   );
 
@@ -96,59 +95,98 @@ export default async function handler(req, res) {
 
   summary +=
     userMessages > otherMessages
-      ? "uneven initiation, with you driving most interactions. "
-      : "balanced participation from both sides. ";
+      ? "you are driving most of the interaction. "
+      : "a fairly balanced exchange between both sides. ";
 
   summary +=
     otherQuestions > otherMessages * 0.25
-      ? "There are clear signs of curiosity and engagement. "
+      ? "There are clear moments of curiosity and engagement from them. "
       : "Curiosity from the other person appears limited. ";
 
   summary +=
     shortReplies > otherMessages * 0.5
-      ? "Replies are often brief, which may limit emotional depth."
-      : "Replies generally show effort and allow conversations to develop.";
+      ? "Frequent short replies may restrict emotional depth."
+      : "Replies generally allow conversations to flow naturally.";
 
-  // ---------------- SAFE REASONS (ALWAYS ARRAYS) ----------------
+  // ---------------- DYNAMIC SIGNALS ----------------
   const green_reasons = [];
   const watch_reasons = [];
+  const advice = [];
 
-  if (otherQuestions > otherMessages * 0.25) {
+  // POSITIVE SIGNALS
+  if (otherQuestions > 0) {
     green_reasons.push(
-      "They ask follow-up questions, indicating genuine curiosity"
-    );
-  } else {
-    watch_reasons.push(
-      "They rarely ask questions or probe deeper into conversations"
+      `They asked ${otherQuestions} questions, showing moments of curiosity and engagement.`
     );
   }
 
-  if (shortReplies <= otherMessages * 0.5) {
+  if (otherMessages >= userMessages * 0.8) {
     green_reasons.push(
-      "Replies usually contain enough detail to continue the conversation"
-    );
-  } else {
-    watch_reasons.push(
-      "Replies are often short or low-effort"
+      `Message contribution is relatively balanced (${otherMessages} from them vs ${userMessages} from you).`
     );
   }
 
-  if (userMessages <= otherMessages * 1.3) {
+  if (shortReplies < otherMessages * 0.4) {
     green_reasons.push(
-      "Initiation feels relatively balanced over time"
-    );
-  } else {
-    watch_reasons.push(
-      "You initiate most conversations"
+      "Most replies contain enough detail to sustain the conversation."
     );
   }
 
+  // THINGS TO WATCH
+  if (otherQuestions === 0) {
+    watch_reasons.push(
+      "They did not ask questions, which may indicate limited curiosity or emotional investment."
+    );
+  }
+
+  if (userMessages > otherMessages * 1.5) {
+    watch_reasons.push(
+      `You initiated significantly more messages (${userMessages} vs ${otherMessages}), creating an effort imbalance.`
+    );
+  }
+
+  if (shortReplies > otherMessages * 0.5) {
+    watch_reasons.push(
+      "A high proportion of short replies can reduce emotional momentum."
+    );
+  }
+
+  // FALLBACKS (never empty)
   if (green_reasons.length === 0) {
-    green_reasons.push("Conversation maintains basic continuity");
+    green_reasons.push(
+      "The conversation remains steady without strong positive or negative extremes."
+    );
   }
 
   if (watch_reasons.length === 0) {
-    watch_reasons.push("No major negative patterns detected so far");
+    watch_reasons.push(
+      "No immediate warning signs were detected in the conversation patterns."
+    );
+  }
+
+  // ---------------- CONTEXTUAL NEXT STEPS ----------------
+  if (userMessages > otherMessages * 1.5) {
+    advice.push(
+      "Reduce over-initiating temporarily and observe whether they take initiative."
+    );
+  }
+
+  if (otherQuestions === 0) {
+    advice.push(
+      "Try asking an open-ended personal question and see if they engage more deeply."
+    );
+  }
+
+  if (shortReplies > otherMessages * 0.5) {
+    advice.push(
+      "Keep your messages concise to encourage reciprocal effort rather than filling gaps."
+    );
+  }
+
+  if (advice.length === 0) {
+    advice.push(
+      "Maintain the current rhythm while gradually introducing more meaningful topics."
+    );
   }
 
   // ---------------- RESPONSE ----------------
@@ -168,8 +206,6 @@ export default async function handler(req, res) {
 
     green_reasons,
     watch_reasons,
-
-    advice:
-      "Ease back slightly on initiation and observe whether they step forward. Gradually introduce more personal topics and note how engagement changes."
+    advice
   });
 }

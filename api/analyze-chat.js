@@ -20,14 +20,38 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing data" });
   }
 
-  // 🔹 TEMP SAMPLE RESPONSE (replace with real logic later)
+  // 🔹 TEMP SAMPLE RESPONSE (can be replaced with logic later)
   return res.status(200).json({
     interest_from_them: "Medium",
     interest_from_you: "High",
     friendzone_risk: "Medium",
-    summary: "Sample analysis response",
-    green_flags: ["Replies consistently"],
-    red_flags: ["Low initiative"],
-    advice: "Take it slow"
+
+    summary:
+      "There are mixed signals in this interaction. Engagement exists, but initiative and emotional depth are not fully balanced yet.",
+
+    // ✅ MORE DETAILED POSITIVE SIGNALS
+    green_reasons: [
+      "They respond with reasonable consistency rather than long unexplained gaps",
+      "Conversations usually flow without feeling forced or one-sided",
+      "There is some curiosity shown through follow-up questions or reactions",
+      "Tone remains friendly and comfortable rather than cold or distant"
+    ],
+
+    // ✅ RENAMED IN UI AS “THINGS TO WATCH”
+    watch_reasons: [
+      "You may be initiating conversations more often than they do",
+      "Depth of conversation varies and sometimes stays surface-level",
+      "Romantic intent is not clearly expressed yet",
+      "Momentum does not always build naturally over time"
+    ],
+
+    // ✅ ROMANTIC VS FRIENDLY VIBE
+    vibe: "Mixed", // Romantic | Mixed | Friendly
+
+    // ✅ TREND OVER TIME
+    trend: "Stable", // Improving | Stable | Declining
+
+    advice:
+      "Try easing back slightly on initiation and see if they step forward. Gradually introduce more personal topics and observe how they respond."
   });
 }
